@@ -64,7 +64,7 @@ namespace Casparcg.Core.Device
 			}
         }
 
-
+        
         public static string ToXml(IEnumerable<CGDataPair> pairs)
         {
             StringBuilder result = new StringBuilder("<templateData>");

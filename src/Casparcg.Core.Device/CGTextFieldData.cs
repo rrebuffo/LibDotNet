@@ -10,14 +10,14 @@ namespace Casparcg.Core.Device
         {
             Data = data;
         }
-
+        
         public string data_;
         public string Data
         {
             get { return data_; }
             set { data_ = value; }
         }
-
+        
         public void ToAMCPEscapedXml(StringBuilder sb)
         {
             sb.Append("<data id=\\\"text\\\" value=\\\"");
@@ -25,7 +25,7 @@ namespace Casparcg.Core.Device
             sb.Append(escapedValue);
             sb.Append("\\\" />");
         }
-
+        
         public void ToXml(StringBuilder sb)
         {
             string value = (Data != null) ? Data : string.Empty;

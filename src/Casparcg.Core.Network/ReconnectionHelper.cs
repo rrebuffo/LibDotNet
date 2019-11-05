@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Casparcg.Core.Network
 {
-	public class ReconnectionHelper : IDisposable
+    public class ReconnectionHelper : IDisposable
 	{
 		System.Timers.Timer Timer { get; set; }
 		ServerConnection Connection { get; set; }
@@ -58,9 +58,12 @@ namespace Casparcg.Core.Network
 			{
                 Connection.ConnectionStateChanged -= Connection_ConnectionStateChanged;
                 OnReconnected(e);
-                Timer.Elapsed -= Timer_Elapsed;
-                Timer.Close();
-                Timer = null;
+                if (Timer != null)
+                {
+                    Timer.Elapsed -= Timer_Elapsed;
+                    Timer.Close();
+                    Timer = null;
+                }
 			}
 			else
 				Timer.Start();
@@ -70,8 +73,8 @@ namespace Casparcg.Core.Network
 		{
 			Connection.InitiateConnection(Connection.Hostname, Connection.Port);
 		}
-
-		protected void OnReconnected(ConnectionEventArgs e)
+        
+        protected void OnReconnected(ConnectionEventArgs e)
 		{
 			try
 			{
@@ -80,8 +83,8 @@ namespace Casparcg.Core.Network
 			}
 			catch { }
 		}
-
-		public void Dispose()
+        
+        public void Dispose()
 		{
 			Close();
 		}

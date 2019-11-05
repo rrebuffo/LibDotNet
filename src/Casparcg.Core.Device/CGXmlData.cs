@@ -6,22 +6,22 @@ namespace Casparcg.Core.Device
 {
 	public class CGXmlData : ICGComponentData
     {
-		public CGXmlData(string xmlString)
+        public CGXmlData(string xmlString)
 		{
 			XmlString = xmlString;
 		}
 
 		public string XmlString { get; set; }
-		#region ICGComponentData Members
-
-		public void ToXml(StringBuilder sb)
+        #region ICGComponentData Members
+        
+        public void ToXml(StringBuilder sb)
 		{
 			sb.Append("<data id=\"xml\">");
 			sb.Append(XmlString);
 			sb.Append("</data>");
 		}
-
-		public void ToAMCPEscapedXml(StringBuilder sb)
+        
+        public void ToAMCPEscapedXml(StringBuilder sb)
 		{
 			sb.Append("<data id=\\\"xml\\\">");
 			string escapedXml = XmlString.Replace("\\", "\\\\");

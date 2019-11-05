@@ -32,20 +32,20 @@ namespace Casparcg.Core.Device
 			templates_ = newTemplates;
             all_ = newAll;
 		}
-
-		public List<TemplateInfo> GetTemplatesInFolder(string folder)
+        
+        public List<TemplateInfo> GetTemplatesInFolder(string folder)
 		{
 			return templates_[folder];
 		}
-
-		public List<TemplateInfo> All { get { return all_; } }
+        
+        public List<TemplateInfo> All { get { return all_; } }
 
 		public ICollection<string> Folders
 		{
 			get { return templates_.Keys; }
 		}
-
-		internal void Clear()
+        
+        internal void Clear()
 		{
 			templates_.Clear();
 		}

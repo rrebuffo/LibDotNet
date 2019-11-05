@@ -6,7 +6,7 @@ namespace Casparcg.Core.Device
 {
 	public class TemplateInfo : ICloneable
 	{
-		internal TemplateInfo(string folder, string name, Int64 size, DateTime updated)
+		internal TemplateInfo(string folder, string name, long size, DateTime updated)
 		{
 			Folder = folder;
 			Name = name;
@@ -16,7 +16,7 @@ namespace Casparcg.Core.Device
 
         public string Folder { get; internal set; }
         public string Name { get; internal set; }
-        public Int64 Size { get; internal set; }
+        public long Size { get; internal set; }
         public DateTime LastUpdated { get; internal set; }
 
         public string FullName { get { return (Folder.Length > 0) ? (Folder + "/" + Name) : (Name); } }

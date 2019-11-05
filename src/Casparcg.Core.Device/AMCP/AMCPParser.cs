@@ -34,6 +34,7 @@ namespace Casparcg.Core.Amcp
         ADD,
         SWAP,
         STATUS,
+        THUMBNAIL,
         Undefined
 	}
 	internal enum AMCPError
@@ -73,7 +74,7 @@ namespace Casparcg.Core.Amcp
 		}
 
 		private Channel channel_ = null;
-		public Channel Channel
+        public Channel Channel
 		{
 			get { return channel_; }
 			set { channel_ = value; }
@@ -104,7 +105,7 @@ namespace Casparcg.Core.Amcp
 		}
 
 		string currentResponseLine_ = "";
-		internal void Parse(string data)
+        internal void Parse(string data)
 		{
 			currentResponseLine_ += data;
 
@@ -185,7 +186,7 @@ namespace Casparcg.Core.Amcp
 			return true;
 		}
 
-		bool ParseSuccessHeader(string[] tokens)
+        bool ParseSuccessHeader(string[] tokens)
 		{
             if (tokens.Length >= 3)
             {
@@ -217,7 +218,7 @@ namespace Casparcg.Core.Amcp
 			return false;
 		}
 
-		bool ParseClientErrorHeader(string[] tokens)
+        bool ParseClientErrorHeader(string[] tokens)
 		{
 			nextParserEventArgs_.Error = ErrorFactory(tokens[0]);
 
@@ -236,7 +237,7 @@ namespace Casparcg.Core.Amcp
 			return true;
 		}
 
-		bool ParseServerErrorHeader(string[] tokens)
+        bool ParseServerErrorHeader(string[] tokens)
 		{
 			nextParserEventArgs_.Error = ErrorFactory(tokens[0]);
 
@@ -291,7 +292,7 @@ namespace Casparcg.Core.Amcp
 				ResponseParsed(this, args);
 		}
 
-		AMCPError ErrorFactory(string errorCode)
+        AMCPError ErrorFactory(string errorCode)
 		{
 			switch (errorCode)
 			{

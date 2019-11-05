@@ -86,13 +86,13 @@ namespace Casparcg.Core.Device
 			get { return transition_; }
 		}
 
-		#region IXmlSerializable Members
-		public System.Xml.Schema.XmlSchema GetSchema()
+        #region IXmlSerializable Members
+        public System.Xml.Schema.XmlSchema GetSchema()
 		{
 			throw new Exception("The method or operation is not implemented.");
 		}
-
-		public void ReadXml(System.Xml.XmlReader reader)
+        
+        public void ReadXml(System.Xml.XmlReader reader)
 		{
 			reader.MoveToContent();
 			string clipname = reader["clipname"];
@@ -115,7 +115,7 @@ namespace Casparcg.Core.Device
 
 			string loop = reader["loop"];
 			bool bLoop = false;
-			Boolean.TryParse(loop, out bLoop);
+            Boolean.TryParse(loop, out bLoop);
 			Loop = bLoop;
 
 			reader.ReadStartElement();
@@ -133,8 +133,8 @@ namespace Casparcg.Core.Device
 					transition_ = new Transition();
 			}
 		}
-
-		public void WriteXml(System.Xml.XmlWriter writer)
+        
+        public void WriteXml(System.Xml.XmlWriter writer)
 		{
 			writer.WriteStartElement("item", Properties.Resources.CasparPlayoutSchemaURL);
 			writer.WriteAttributeString("clipname", Clipname);

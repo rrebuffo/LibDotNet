@@ -1,19 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 
 namespace Casparcg.Core.Device
 {
 	public enum MediaType
-	{
-		STILL,
-		MOVIE,
-		AUDIO
+    {
+        STILL,
+        MOVIE,
+        AUDIO,
+        ALL
 	}
 
-	public class MediaInfo
+	public class MediaInfo: INotifyPropertyChanged
 	{
-		internal MediaInfo(string folder, string name, MediaType type, Int64 size, DateTime updated, string timecode)
+		internal MediaInfo(string folder, string name, MediaType type, long size, DateTime updated, string timecode, long frames, double fps)
 		{
 			Folder = folder;
 			Name = name;
@@ -21,7 +23,9 @@ namespace Casparcg.Core.Device
 			LastUpdated = updated;
 			Type = type;
             Timecode = timecode;
-		}
+            Fps = fps;
+            Frames = frames;
+        }
 
         private string timecode_;
         public string Timecode
@@ -30,7 +34,21 @@ namespace Casparcg.Core.Device
             internal set { timecode_ = value; }
         }
 
-		private string folder_;
+        private long frames_;
+        public long Frames
+        {
+            get { return frames_; }
+            internal set { frames_ = value; }
+        }
+
+        private double fps_;
+        public double Fps
+        {
+            get { return fps_; }
+            internal set { fps_ = value; }
+        }
+
+        private string folder_;
 		public string Folder
 		{
 			get { return folder_; }
@@ -53,29 +71,48 @@ namespace Casparcg.Core.Device
 			}
 		}
 		private MediaType type_;
-		public MediaType Type
+        public MediaType Type
 		{
 			get { return type_; }
 			set { type_ = value; }
 		}
 
-		private Int64 size_;
-		public Int64 Size
+		private long size_;
+		public long Size
 		{
 			get { return size_; }
 			internal set { size_ = value; }
-		}
+        }
 
-		private DateTime updated_;
-		public DateTime LastUpdated
-		{
-			get { return updated_; }
-			internal set { updated_ = value; }
-		}
+        private DateTime updated_;
+        public DateTime LastUpdated
+        {
+            get { return updated_; }
+            internal set { updated_ = value; }
+        }
 
-		public override string ToString()
+        private string thumbnail_ = null;
+        public string Thumbnail
+        {
+            get { return thumbnail_; }
+            set
+            {
+                thumbnail_ = value;
+                OnPropertyChanged("Thumbnail");
+            }
+        }
+
+        public string ElementType { get; } = "Media";
+
+        public override string ToString()
 		{
 			return FullName;
 		}
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 	}
 }

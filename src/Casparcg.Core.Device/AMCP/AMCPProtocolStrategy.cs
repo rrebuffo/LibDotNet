@@ -16,8 +16,8 @@ namespace Casparcg.Core.Amcp
 			device_ = device;
 			parser_.ResponseParsed += new EventHandler<AMCPParserEventArgs>(parser__ResponseParsed);
 		}
-
-		void parser__ResponseParsed(object sender, AMCPParserEventArgs e)
+        
+        void parser__ResponseParsed(object sender, AMCPParserEventArgs e)
 		{
 			//A response is completely parsed
 			//Info about it is in the eventArgs
@@ -35,7 +35,8 @@ namespace Casparcg.Core.Amcp
 						OnTLS(e);
 						break;
 					case AMCPCommand.INFO:
-						OnInfo(e);
+                        if (e.Subcommand == string.Empty) OnInfo(e);
+                        else OnData(e);
 						break;
 					case AMCPCommand.LOAD:
 						device_.OnLoad((string)((e.Data.Count > 0) ? e.Data[0] : string.Empty));
@@ -54,24 +55,35 @@ namespace Casparcg.Core.Amcp
 					case AMCPCommand.DATA:
 						OnData(e);
 						break;
+                    case AMCPCommand.THUMBNAIL:
+                        device_.OnThumbnailRetrieved(e.Data[0], e.Command.ToString());
+                        break;
+                    default:
+                        OnData(e);
+                        break;
 				}
 			}
 			else
-			{
-				if (e.Command == AMCPCommand.DATA)
-					OnData(e);
-			}
+            {
+                if (e.Command == AMCPCommand.DATA)
+                    OnData(e);
+                if (e.Command == AMCPCommand.THUMBNAIL)
+                {
+                    device_.OnThumbnailRetrieved(string.Empty,e.Command.ToString());
+                    return;
+                }
+            }
 		}
 
 		private void OnData(AMCPParserEventArgs e)
-		{
-			if (e.Error == AMCPError.FileNotFound)
-			{
-				device_.OnDataRetrieved(string.Empty);
-				return;
-			}
+        {
+            if (e.Error == AMCPError.FileNotFound)
+            {
+                device_.OnDataRetrieved(string.Empty);
+                return;
+            }
 
-			if (e.Subcommand == "RETRIEVE")
+            if (e.Subcommand == "RETRIEVE")
 			{
 				if (e.Error == AMCPError.None && e.Data.Count > 0)
 					device_.OnDataRetrieved(e.Data[0]);
@@ -79,17 +91,24 @@ namespace Casparcg.Core.Amcp
 					device_.OnDataRetrieved(string.Empty);
 			}
 			else if (e.Subcommand == "LIST")
-			{
-				device_.OnUpdatedDataList(e.Data);
+            {
+                device_.OnUpdatedDataList(e.Data);
 			}
-		}
+            else
+            {
+                if (e.Error == AMCPError.None && e.Data.Count > 0)
+                device_.OnServerResponded(e.Command.ToString(),e.Subcommand,e.Data);
 
-		private void OnTLS(AMCPParserEventArgs e)
+            }
+		}
+        
+        private void OnTLS(AMCPParserEventArgs e)
 		{
 			List<TemplateInfo> templates = new List<TemplateInfo>();
 			foreach (string templateInfo in e.Data)
 			{
-				string pathName = templateInfo.Substring(templateInfo.IndexOf('\"')+1, templateInfo.IndexOf('\"', 1)-1);
+                bool isServer22 = (templateInfo.IndexOf('\"') < 0);
+                string pathName = isServer22 ? templateInfo : templateInfo.Substring(templateInfo.IndexOf('\"') + 1, templateInfo.IndexOf('\"', 1) - 1);;
 				string folderName = "";
 				string fileName = "";
 
@@ -106,18 +125,21 @@ namespace Casparcg.Core.Amcp
 					fileName = pathName;
 				}
 
-				string temp = templateInfo.Substring(templateInfo.LastIndexOf('\"') + 1);
-				string[] sizeAndDate = temp.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-				Int64 size = Int64.Parse(sizeAndDate[0]);
-				DateTime updated = DateTime.ParseExact(sizeAndDate[1], "yyyyMMddHHmmss", null);
+                int nameEndIndex = templateInfo.LastIndexOf('\"');
+                int tempStartIndex = (nameEndIndex < 0 || nameEndIndex + 1 > templateInfo.Length) ? -1 : templateInfo.LastIndexOf('\"')+1 ;
+                string temp = templateInfo.Substring(tempStartIndex);
+                string[] sizeAndDate = temp.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                Int64 size = Int64.Parse(sizeAndDate[0]);
+                DateTime updated = DateTime.ParseExact(sizeAndDate[1], "yyyyMMddHHmmss", null);
 
-				templates.Add(new TemplateInfo(folderName, fileName, size, updated));
-			}
+                if (isServer22) updated = DateTime.MinValue;
+                templates.Add(new TemplateInfo(folderName, fileName, size, updated));
+            }
 
-			device_.OnUpdatedTemplatesList(templates);
+            device_.OnUpdatedTemplatesList(templates);
 		}
-
-        private string ConvertToTimecode(double time, int fps)
+        
+        private string ConvertToTimecode(double time, double fps)
         {
             int hour = (int)(time / 3600);
             int minutes = (int)((time - hour * 3600) / 60);
@@ -126,8 +148,8 @@ namespace Casparcg.Core.Amcp
 
             return string.Format("{0:D2}:{1:D2}:{2:D2}:{3:D2}", hour, minutes, seconds, frames);
         }
-
-		private void OnCLS(AMCPParserEventArgs e)
+        
+        private void OnCLS(AMCPParserEventArgs e)
 		{
 			List<MediaInfo> clips = new List<MediaInfo>();
 			foreach (string mediaInfo in e.Data)
@@ -157,37 +179,45 @@ namespace Casparcg.Core.Amcp
                 DateTime updated = DateTime.ParseExact(param[2], "yyyyMMddHHmmss", null);
 
                 string timecode = "";
+                long frames = 0;
+                double fps = 0;
                 if (param.Length > 3)
                 {
-                    string totalFrames = param[3];
+                    string totalFrames = (param[3]=="NaN")? "0" : param[3];
                     string timebase = param[4];
 
-                    long frames = long.Parse(totalFrames);
-                    int fps = int.Parse(timebase.Split('/')[1]);
+                    frames = long.Parse(totalFrames);
+                    fps = double.Parse(timebase.Split('/')[1])/ int.Parse(timebase.Split('/')[0]);
 
-                    double time = frames * (1.0 / fps);
-                    timecode = ConvertToTimecode(time, fps);
+                    double time = frames * (1d / fps);
+                    timecode = (frames == 0 || fps == 0)? "00:00:00:00" : ConvertToTimecode(time, fps);
                 }
 
-				clips.Add(new MediaInfo(folderName, fileName, type, size, updated, timecode));
+				clips.Add(new MediaInfo(folderName, fileName, type, size, updated, timecode, frames, fps));
 			}
 
 			device_.OnUpdatedMediafiles(clips);
 		}
+        
+        void OnInfo(AMCPParserEventArgs e)
+        {
+            List<ChannelInfo> channelInfo = new List<ChannelInfo>();
 
-		void OnInfo(AMCPParserEventArgs e)
-		{
-			List<ChannelInfo> channelInfo = new List<ChannelInfo>();
-			foreach (string channelData in e.Data)
-			{
-				string[] data = channelData.Split(' ');
-				int id = Int32.Parse(data[0]);
+            if (e.Data[0] != null && e.Data[0].Substring(0, 1) == "<")
+            {
+                device_.OnInfoReceived(e.Data[0]);
+                return;
+            }
+            foreach (string channelData in e.Data)
+            {
+                string[] data = channelData.Split(' ');
+                int id = Int32.Parse(data[0]);
 //				VideoMode vm = (VideoMode)Enum.Parse(typeof(VideoMode), data[1]);
 //				ChannelStatus cs = (ChannelStatus)Enum.Parse(typeof(ChannelStatus), data[2]);
-				channelInfo.Add(new ChannelInfo(id, VideoMode.Unknown, ChannelStatus.Stopped, ""));
-			}
+                channelInfo.Add(new ChannelInfo(id, data[1], ChannelStatus.Stopped, ""));
+            }
 
-			device_.OnUpdatedChannelInfo(channelInfo);
+            device_.OnUpdatedChannelInfo(channelInfo);
 		}
 
 		#region IProtocolStrategy Members

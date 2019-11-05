@@ -7,8 +7,8 @@ using System.Xml.XPath;
 
 namespace Casparcg.Core.Device
 {
-	[Obsolete("use ICGDataContainer for CGData instead", false)]
-	public class CasparCGItem : System.Xml.Serialization.IXmlSerializable
+    [Obsolete("use ICGDataContainer for CGData instead", false)]
+    public class CasparCGItem : System.Xml.Serialization.IXmlSerializable
 	{
 		public CasparCGItem()
 		{
@@ -92,13 +92,13 @@ namespace Casparcg.Core.Device
 			}
 		}
 
-		#region IXmlSerializable Members
-		public System.Xml.Schema.XmlSchema GetSchema()
+        #region IXmlSerializable Members
+        public System.Xml.Schema.XmlSchema GetSchema()
 		{
 			throw new Exception("The method or operation is not implemented.");
 		}
-
-		public void ReadXml(System.Xml.XmlReader reader)
+        
+        public void ReadXml(System.Xml.XmlReader reader)
 		{
 			reader.MoveToContent();
 			string templatename = reader["templatename"];
@@ -133,8 +133,8 @@ namespace Casparcg.Core.Device
 			}
 
 		}
-
-		public void WriteXml(System.Xml.XmlWriter writer)
+        
+        public void WriteXml(System.Xml.XmlWriter writer)
 		{
 			writer.WriteStartElement("cgitem", Properties.Resources.CasparPlayoutSchemaURL);
 			writer.WriteAttributeString("templatename", TemplateName);

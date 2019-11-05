@@ -5,28 +5,48 @@ using System.Globalization;
 
 namespace Casparcg.Core.Device
 {
-	public class Channel
-	{
-		public int ID { get; private set; }
+    public class Channel
+    {
+
+        public int ID { get; private set; }
         public CGManager CG { get; private set; }
-        public VideoMode VideoMode { get; internal set; }
+        public string VideoMode { get; internal set; }
+        public double Fps { get; internal set; }
         internal Casparcg.Core.Network.ServerConnection Connection { get; private set; }
 
-		internal Channel(Casparcg.Core.Network.ServerConnection connection, int id, VideoMode videoMode)
-		{
-			ID = id;
+        internal Channel(Casparcg.Core.Network.ServerConnection connection, int id, string videoMode)
+        {
+            ID = id;
             VideoMode = videoMode;
+            SetChannelFps();
             Connection = connection;
-			CG = new CGManager(this);
-		}
+            CG = new CGManager(this);
+        }
 
 
-		public bool Load(string clipname, bool loop)
-		{
+        private void SetChannelFps()
+        {
+            switch (VideoMode)
+            {
+                case "NTSC":
+                    Fps = 60;
+                    break;
+                case "PAL":
+                    Fps = 50;
+                    break;
+                default:
+                    Fps = Math.Round(float.Parse(VideoMode.Substring(VideoMode.Length - 4, 4)) / 100);
+                    break;
+            }
+        }
+
+
+        public bool Load(string clipname, bool loop)
+        {
             clipname = clipname.Replace("\\", "\\\\");
-			Connection.SendString("LOAD " + ID + " " + clipname + (string)(loop ? " LOOP" : ""));
-			return true;
-		}
+            Connection.SendString("LOAD " + ID + " " + clipname + (string)(loop ? " LOOP" : ""));
+            return true;
+        }
         public bool Load(int videoLayer, string clipname, bool loop)
         {
             clipname = clipname.Replace("\\", "\\\\");
@@ -37,23 +57,23 @@ namespace Casparcg.Core.Device
 
             return true;
         }
-		public bool Load(CasparItem item)
-		{
+        public bool Load(CasparItem item)
+        {
             string clipname = item.Clipname.Replace("\\", "\\\\");
             if (item.VideoLayer == -1)
                 Connection.SendString("LOAD " + ID + " " + clipname + (string)(item.Loop ? " LOOP" : ""));
             else
                 Connection.SendString("LOAD " + ID + "-" + item.VideoLayer + " " + clipname + (string)(item.Loop ? " LOOP" : ""));
-			return true;
-		}
-       
+            return true;
+        }
 
 
 
 
 
-		public bool LoadBG(CasparItem item)
-		{
+
+        public bool LoadBG(CasparItem item)
+        {
             string clipname = item.Clipname.Replace("\\", "\\\\");
             if (item.VideoLayer == -1)
             {
@@ -70,8 +90,8 @@ namespace Casparcg.Core.Device
                     Connection.SendString("LOADBG " + ID + "-" + item.VideoLayer + " " + clipname + (string)(item.Loop ? " LOOP" : "") + " " + item.Transition + " SEEK " + item.Seek + " LENGTH " + item.Length);
             }
 
-			return true;
-		}
+            return true;
+        }
         public bool LoadBG(int videoLayer, string clipname, bool loop)
         {
             clipname = clipname.Replace("\\", "\\\\");
@@ -79,7 +99,7 @@ namespace Casparcg.Core.Device
                 Connection.SendString("LOADBG " + ID + " " + clipname + (string)(loop ? " LOOP" : ""));
             else
                 Connection.SendString("LOADBG " + ID + "-" + videoLayer + " " + clipname + (string)(loop ? " LOOP" : ""));
-           
+
             return true;
         }
         public bool LoadBG(int videoLayer, string clipname, bool loop, uint seek, uint length)
@@ -93,15 +113,15 @@ namespace Casparcg.Core.Device
             return true;
         }
         public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration)
-		{
+        {
             clipname = clipname.Replace("\\", "\\\\");
             if (videoLayer == -1)
-			    Connection.SendString("LOADBG " + ID + " " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
+                Connection.SendString("LOADBG " + ID + " " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
             else
                 Connection.SendString("LOADBG " + ID + "-" + videoLayer + " " + clipname + (string)(loop ? " LOOP" : "") + " " + transition.ToString() + " " + transitionDuration.ToString());
 
-			return true;
-		}
+            return true;
+        }
         public bool LoadBG(int videoLayer, string clipname, bool loop, TransitionType transition, uint transitionDuration, TransitionDirection direction)
         {
             clipname = clipname.Replace("\\", "\\\\");
@@ -134,10 +154,10 @@ namespace Casparcg.Core.Device
             return true;
         }
 
-		public void Play()
-		{
-			Connection.SendString("PLAY " + ID);
-		}
+        public void Play()
+        {
+            Connection.SendString("PLAY " + ID);
+        }
         public void Play(int videoLayer)
         {
             if (videoLayer == -1)
@@ -146,10 +166,10 @@ namespace Casparcg.Core.Device
                 Connection.SendString("PLAY " + ID + "-" + videoLayer);
         }
 
-		public void Stop()
-		{
-			Connection.SendString("STOP " + ID);
-		}
+        public void Stop()
+        {
+            Connection.SendString("STOP " + ID);
+        }
         public void Stop(int videoLayer)
         {
             if (videoLayer == -1)
@@ -158,10 +178,10 @@ namespace Casparcg.Core.Device
                 Connection.SendString("STOP " + ID + "-" + videoLayer);
         }
 
-		public void Clear()
-		{
-			Connection.SendString("CLEAR " + ID);
-		}
+        public void Clear()
+        {
+            Connection.SendString("CLEAR " + ID);
+        }
         public void Clear(int videoLayer)
         {
             if (videoLayer == -1)
@@ -170,10 +190,10 @@ namespace Casparcg.Core.Device
                 Connection.SendString("CLEAR " + ID + "-" + videoLayer);
         }
 
-		public void SetMode(VideoMode mode)
-		{
-			Connection.SendString("SET " + ID + " MODE " + ToAMCPString(mode));
-		}
+        public void SetMode(string mode)
+        {
+            Connection.SendString("SET " + ID + " MODE " + ToAMCPString(mode));
+        }
 
 
 
@@ -247,38 +267,28 @@ namespace Casparcg.Core.Device
 
 
 
-		private string ToAMCPString(VideoMode mode)
-		{
-			string result = string.Empty;
-			switch (mode)
-			{
-				case VideoMode.Unknown:
-				case VideoMode.PAL:
-				case VideoMode.NTSC:
-					result = mode.ToString();
-					break;
+        private string ToAMCPString(string mode)
+        {
+            string result = string.Empty;
+            switch (mode)
+            {
+                case "PAL":
+                case "NTSC":
+                    result = mode.ToString();
+                    break;
 
-				default:
-					{
-						string modestr = mode.ToString();
-						result = (modestr.Length > 2) ? modestr.Substring(2) : modestr;
-						break;
-					}
-			}
+                default:
+                    {
+                        string modestr = mode;
+                        result = (modestr.Length > 2) ? modestr.Substring(2) : modestr;
+                        break;
+                    }
+            }
 
-			return result;
-		}
-	}
-
-	public enum VideoMode
-	{
-		PAL,
-		NTSC,
-		SD576p2500,
-		HD720p5000,
-		HD1080i5000,
-		Unknown
-	}
+            return result;
+        }
+    }
+	
 	public enum ChannelStatus
 	{
 		Playing,
@@ -286,7 +296,7 @@ namespace Casparcg.Core.Device
 	}
 	internal class ChannelInfo
 	{
-		public ChannelInfo(int id, VideoMode vm, ChannelStatus cs, string activeClip)
+		public ChannelInfo(int id, string vm, ChannelStatus cs, string activeClip)
 		{
 			ID = id;
 			VideoMode = vm;
@@ -295,7 +305,7 @@ namespace Casparcg.Core.Device
 		}
 
         public int ID { get; set; }
-        public VideoMode VideoMode { get; set; }
+        public string VideoMode { get; set; }
         public ChannelStatus Status { get; set; }
         public string ActiveClip { get; set; }
 	}

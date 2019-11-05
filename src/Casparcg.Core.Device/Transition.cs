@@ -5,12 +5,12 @@ using System.Text;
 namespace Casparcg.Core.Device
 {
 	public enum TransitionType
-	{
-		CUT,
-		MIX,
-		PUSH,
-		SLIDE,
-		WIPE
+    {
+        CUT,
+        MIX,
+        PUSH,
+        SLIDE,
+        WIPE
 	}
 
     public enum TransitionDirection
@@ -41,7 +41,7 @@ namespace Casparcg.Core.Device
         }
 
 		private TransitionType type_;
-		public TransitionType Type
+        public TransitionType Type
 		{
 			get { return type_; }
 			set { type_ = value; }
@@ -52,8 +52,8 @@ namespace Casparcg.Core.Device
 			get { return duration_; }
 			set { duration_ = value; }
 		}
-
-		public override string ToString()
+        
+        public override string ToString()
 		{
             return Type.ToString() + " " + duration_.ToString() + " " + direction_.ToString();
 		}

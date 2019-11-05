@@ -18,23 +18,18 @@ namespace Casparcg.Core.Device
         public string Version { get; private set; }
 
         public bool IsConnected { get { return (Connection == null) ? false : Connection.IsConnected; } }
-
-        [Obsolete("This event is obsolete. Use the new ConnectionStatusChanged instead")]
-		public event EventHandler<Casparcg.Core.Network.NetworkEventArgs> Connected;
-        [Obsolete("This event is obsolete. Use the new ConnectionStatusChanged instead")]
-        public event EventHandler<Casparcg.Core.Network.NetworkEventArgs> Disconnected;
-        [Obsolete("This event is obsolete. Use the new ConnectionStatusChanged instead")]
-        public event EventHandler<Casparcg.Core.Network.NetworkEventArgs> FailedConnect;
-        [Obsolete("This event is obsolete.")]
-        public event EventHandler<Casparcg.Core.Network.ExceptionEventArgs> OnAsyncException;
-
+        
         public event EventHandler<Casparcg.Core.Network.ConnectionEventArgs> ConnectionStatusChanged;
 
-		public event EventHandler<DataEventArgs> DataRetrieved;
-		public event EventHandler<EventArgs> UpdatedChannels;
+        public event EventHandler<DataEventArgs> DataRetrieved;
+        public event EventHandler<EventArgs> UpdatedChannels;
 		public event EventHandler<EventArgs> UpdatedTemplates;
 		public event EventHandler<EventArgs> UpdatedMediafiles;
 		public event EventHandler<EventArgs> UpdatedDatafiles;
+		public event EventHandler<EventArgs> UpdatedVersion;
+        public event EventHandler<DataEventArgs> InfoReceived;
+        public event EventHandler<DataEventArgs> ThumbnailRetrieved;
+        public event EventHandler<ResponseEventArgs> ServerResponded;
 
         volatile bool bIsDisconnecting = false;
 
@@ -53,7 +48,7 @@ namespace Casparcg.Core.Device
             Connection.ConnectionStateChanged += server__ConnectionStateChanged;
 		}
 
-		#region Server notifications
+        #region Server notifications
         void server__ConnectionStateChanged(object sender, Casparcg.Core.Network.ConnectionEventArgs e)
         {
             try
@@ -69,17 +64,6 @@ namespace Casparcg.Core.Device
 
                 //Ask server for channels
                 Connection.SendString("INFO");
-
-                //For compability with legacy users
-                try
-                {
-                    if (Connected != null)
-                    {
-                        Connection.SendString("TLS");
-                        Connected(this, new Casparcg.Core.Network.NetworkEventArgs(e.Hostname, e.Port));
-                    }
-                }
-                catch { }
             }
             else
             {
@@ -98,14 +82,6 @@ namespace Casparcg.Core.Device
                     catch { }
                     bIsDisconnecting = false;
                 }
-
-                //For compability with legacy users
-                try
-                {
-                    if (Disconnected != null)
-                        Disconnected(this, new Casparcg.Core.Network.NetworkEventArgs(e.Hostname, e.Port));
-                }
-                catch { }
             }
         }
 
@@ -140,19 +116,25 @@ namespace Casparcg.Core.Device
 		{
 			if (IsConnected)
                 Connection.SendString("DATA LIST");
-		}
-		public void StoreData(string name, ICGDataContainer data)
+        }
+        public void StoreData(string name, ICGDataContainer data)
 		{
             if (IsConnected)
-                Connection.SendString(string.Format("DATA STORE \"{0}\" \"{1}\"", name, data.ToAMCPEscapedXml())); 
-		}
-		public void RetrieveData(string name)
-		{
-			if (IsConnected)
+                Connection.SendString(string.Format("DATA STORE \"{0}\" \"{1}\"", name, data.ToAMCPEscapedXml()));
+        }
+        public void RetrieveData(string name)
+        {
+            if (IsConnected)
                 Connection.SendString(string.Format("DATA RETRIEVE \"{0}\"", name));
-		}
+        }
 
-		#region Connection
+        public void RemoveData(string name)
+        {
+            if (IsConnected)
+                Connection.SendString(string.Format("DATA REMOVE \"{0}\"", name));
+        }
+
+        #region Connection
         public bool Connect(string host, int port)
         {
             return Connect(host, port, false);
@@ -194,15 +176,15 @@ namespace Casparcg.Core.Device
 
             Connection.CloseConnection();
 		}
-		#endregion
+        #endregion
 
-		#region AMCP-protocol callbacks
-		internal void OnUpdatedChannelInfo(List<ChannelInfo> channels)
-		{
+        #region AMCP-protocol callbacks
+        internal void OnUpdatedChannelInfo(List<ChannelInfo> channels)
+        {
             List<Channel> newChannels = new List<Channel>();
-			
+
             foreach (ChannelInfo info in channels)
-			{
+            {
                 if (info.ID <= Channels.Count)
                 {
                     Channels[info.ID - 1].VideoMode = info.VideoMode;
@@ -210,15 +192,15 @@ namespace Casparcg.Core.Device
                 }
                 else
                     newChannels.Add(new Channel(Connection, info.ID, info.VideoMode));
-			}
+            }
 
             Channels = newChannels;
+            
+            if (UpdatedChannels != null)
+                UpdatedChannels(this, EventArgs.Empty);
+        }
 
-			if (UpdatedChannels != null)
-				UpdatedChannels(this, EventArgs.Empty);
-		}
-
-		internal void OnUpdatedTemplatesList(List<TemplateInfo> templates)
+        internal void OnUpdatedTemplatesList(List<TemplateInfo> templates)
 		{
             TemplatesCollection newTemplates = new TemplatesCollection();
             newTemplates.Populate(templates);
@@ -239,43 +221,83 @@ namespace Casparcg.Core.Device
 		internal void OnVersion(string version)
 		{
 			Version = version;
+            OnUpdatedVersion();
 		}
-
-		internal void OnLoad(string clipname)
+        
+        internal void OnLoad(string clipname)
 		{
-		}
+        }
 
-		internal void OnLoadBG(string clipname)
-		{
-		}
+        internal void OnLoadBG(string clipname)
+        {
+        }
+
+        internal void OnInfoReceived(string info)
+        {
+            InfoReceived?.Invoke(this, new DataEventArgs(info, "INFO"));
+        }
+
+        internal void OnUpdatedVersion()
+        {
+            UpdatedVersion?.Invoke(this, EventArgs.Empty);
+        }
 
 		internal void OnUpdatedDataList(List<string> datafiles)
 		{
+            Datafiles.Clear();
             Datafiles = datafiles;
 
 			if (UpdatedDatafiles != null)
 				UpdatedDatafiles(this, EventArgs.Empty);
-		}
+        }
 
-		internal void OnDataRetrieved(string data)
-		{
-			if(DataRetrieved != null)
-				DataRetrieved(this, new DataEventArgs(data));
-		}
-		#endregion
-	}
+        internal void OnDataRetrieved(string data)
+        {
+            if(DataRetrieved != null)
+                DataRetrieved(this, new DataEventArgs(data));
+        }
 
-	public class DataEventArgs : EventArgs
-	{
-		public DataEventArgs(string data)
-		{
-			Data = data;
-		}
+        internal void OnThumbnailRetrieved(string data,string command)
+        {
+            if (ThumbnailRetrieved != null)
+                ThumbnailRetrieved(this, new DataEventArgs(data,command));
+        }
 
-		public string Data { get; set; }
-	}
+        internal void OnServerResponded(string command, string subcommand, List<string> data)
+        {
+            if (ServerResponded != null)
+                ServerResponded(this, new ResponseEventArgs(command, subcommand, data));
+        }
+        #endregion
+    }
 
-	public class CasparDeviceSettings
+    public class DataEventArgs : EventArgs
+    {
+        public DataEventArgs(string data, string command = null)
+        {
+            Data = data;
+            Command = command;
+        }
+
+        public string Data { get; set; }
+        public string Command { get; set; }
+    }
+
+    public class ResponseEventArgs : EventArgs
+    {
+        public ResponseEventArgs(string command, string subcommand, List<string> data)
+        {
+            Data = data;
+            Command = command;
+            Subcommand = subcommand;
+        }
+
+        public string Command { get; set; }
+        public string Subcommand { get; set; }
+        public List<string> Data { get; set; }
+    }
+
+    public class CasparDeviceSettings
 	{
         public const int DefaultReconnectInterval = 5000;
 
@@ -283,7 +305,7 @@ namespace Casparcg.Core.Device
         {
             ReconnectInterval = DefaultReconnectInterval;
         }
-
+        
         public string Hostname { get; set; }
         public int Port { get; set; }
         public bool AutoConnect { get; set; }

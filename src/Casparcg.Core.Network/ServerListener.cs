@@ -318,7 +318,7 @@ namespace Casparcg.Core.Network
             }
         }
 
-		protected void OnClientConnected(RemoteHostState state)
+        protected void OnClientConnected(RemoteHostState state)
 		{
 			try
 			{

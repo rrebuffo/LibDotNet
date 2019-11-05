@@ -21,13 +21,13 @@ namespace Casparcg.Core.Device
 		{
 			Add(item, false);
 		}
-		[Obsolete("use another overload", false)]
+        [Obsolete("use another overload", false)]
         public void Add(int layer, CasparCGItem item)
 		{
             item.Layer = layer;
 			Add(item, false);
 		}
-		[Obsolete("use another overload", false)]
+        [Obsolete("use another overload", false)]
         public void Add(int layer, CasparCGItem item, bool bPlayOnLoad)
 		{
             item.Layer = layer;
@@ -40,7 +40,7 @@ namespace Casparcg.Core.Device
             item.Layer = layer;
             Add(item, bPlayOnLoad);
         }
-		[Obsolete("use another overload", false)]
+        [Obsolete("use another overload", false)]
 		public void Add(CasparCGItem item, bool bPlayOnLoad)
 		{
 			bool bAutoPlay = item.AutoPlay || bPlayOnLoad;
@@ -199,8 +199,8 @@ namespace Casparcg.Core.Device
 
 
 
-
-		public void Update(int layer, ICGDataContainer data)
+        
+        public void Update(int layer, ICGDataContainer data)
 		{
 			Channel.Connection.SendString("CG " + Channel.ID + " UPDATE " + layer + " " + " \"" + data.ToAMCPEscapedXml() + "\"");
 		}
@@ -253,7 +253,7 @@ namespace Casparcg.Core.Device
 	public interface ICGDataContainer
 	{
 		string ToXml();
-		string ToAMCPEscapedXml();
+        string ToAMCPEscapedXml();
 	}
 
 	public class CasparCGDataCollection : ICGDataContainer
@@ -284,7 +284,7 @@ namespace Casparcg.Core.Device
 			if(!string.IsNullOrEmpty(name) && data_.ContainsKey(name))
 				data_.Remove(name);
 		}
-
+        
         public List<CGDataPair> DataPairs
         {
             get
